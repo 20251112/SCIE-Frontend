@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社群评级与成就系统 - 管理员界面</title>
+    <link href="bootstrap-5.3.8-dist/css/bootstrap-grid.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="bootstrap-5.3.8-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- 加载指示器 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-border text-primary loading-spinner" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+    </div>
+
+    <!-- 顶部导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>
+                社群评级与成就系统
+            </a>
+
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white" href="#" id="statusDropdown" role="button"
+                        data-bs-toggle="dropdown">
+                        <i class="fas fa-info-circle me-1"></i>
+                        系统状态
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end">
+                        <div class="px-3 py-2">
+                            <small class="text-muted">最后更新</small>
+                            <div id="lastUpdate">加载中...</div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="px-3 py-2">
+                            <small class="text-muted">成员总数</small>
+                            <div id="totalMembers">加载中...</div>
+                        </div>
+                        <div class="px-3 py-2">
+                            <small class="text-muted">内容总数</small>
+                            <div id="totalContents">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边栏 -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <div class="px-3 mb-4">
+                    <div class="input-group search-box">
+                        <input type="text" class="form-control" placeholder="搜索成员..." id="memberSearch">
+                        <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="px-3 mb-4">
+                    <h6 class="text-uppercase text-muted mb-2">知识领域</h6>
+                    <select class="form-select" id="domainFilter">
+                        <option value="">全部领域</option>
+                        <option value="Web开发">Web开发</option>
+                        <option value="前端开发">前端开发</option>
+                        <option value="后端开发">后端开发</option>
+                        <option value="数据科学">数据科学</option>
+                        <option value="人工智能">人工智能</option>
+                        <option value="移动开发">移动开发</option>
+                        <option value="云计算与运维">云计算与运维</option>
+                        <option value="产品管理">产品管理</option>
+                        <option value="视觉设计">视觉设计</option>
+                    </select>
+                </div>
+
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-target="overview">
+                            <i class="fas fa-home me-2"></i>系统概览
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-target="member-ranking">
+                            <i class="fas fa-users me-2"></i>成员影响力排名
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-target="content-ranking">
+                            <i class="fas fa-file-alt me-2"></i>内容影响力排名
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-target="achievement-ranking">
+                            <i class="fas fa-trophy me-2"></i>成就完成排名
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-target="achievement-list">
+                            <i class="fas fa-list me-2"></i>成就清单
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="col-md-9 col-lg-10 py-4">
+                <!-- 系统概览 -->
+                <div id="overview" class="content-section active">
+                    <div class="row mb-4" id="statCards">
+                        <!-- 统计卡片将由JS动态生成 -->
+                    </div>
+
+                    <!-- 评级分布 -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">评级分布</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="ratingDistribution">
+                                        <!-- 评级分布内容将由JS动态生成 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">Top 5 成员影响力</h6>
+                                    <button class="btn btn-sm btn-outline-primary"
+                                        data-target="member-ranking">查看全部</button>
+                                </div>
+                                <div class="card-body p-0" id="topMembersList">
+                                    <!-- Top成员列表将由JS动态生成 -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">Top 5 成就完成</h6>
+                                    <button class="btn btn-sm btn-outline-primary"
+                                        data-target="achievement-ranking">查看全部</button>
+                                </div>
+                                <div class="card-body p-0" id="topAchievementsList">
+                                    <!-- Top成就列表将由JS动态生成 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 成员影响力排名 -->
+                <div id="member-ranking" class="content-section">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">成员影响力排名</h5>
+                            <div class="d-flex gap-2">
+                                <select class="form-select form-select-sm" id="sortBy" style="width: auto;">
+                                    <option value="desc">按分数降序</option>
+                                    <option value="asc">按分数升序</option>
+                                </select>
+                                <select class="form-select form-select-sm" id="pageSize" style="width: auto;">
+                                    <option value="10">每页10条</option>
+                                    <option value="20">每页20条</option>
+                                    <option value="50">每页50条</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- 搜索结果提示 -->
+                            <div id="searchResultsHeader" class="alert alert-info search-results-header d-none mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-search me-2"></i>
+                                        <span id="searchResultsText">搜索结果</span>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-secondary" id="clearSearch">
+                                        <i class="fas fa-times me-1"></i>清除搜索
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>排名</th>
+                                            <th>成员</th>
+                                            <th>主要领域</th>
+                                            <th>等级</th>
+                                            <th>影响力分数</th>
+                                            <th>加入时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="memberRankingTable">
+                                        <!-- 成员排名表格将由JS动态生成 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- 分页控件 -->
+                            <nav aria-label="成员排名分页">
+                                <ul class="pagination justify-content-center" id="memberPagination">
+                                    <!-- 分页将由JS动态生成 -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 成就清单 -->
+                <div id="achievement-list" class="content-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">成就清单</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" id="achievementCategories">
+                                <!-- 成就类别将由JS动态生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 内容影响力排名 -->
+                <div id="content-ranking" class="content-section">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">内容影响力排名</h5>
+                            <div class="d-flex gap-2">
+                                <select class="form-select form-select-sm" id="contentSortBy" style="width: auto;">
+                                    <option value="desc">按分数降序</option>
+                                    <option value="asc">按分数升序</option>
+                                </select>
+                                <select class="form-select form-select-sm" id="contentPageSize" style="width: auto;">
+                                    <option value="10">每页10条</option>
+                                    <option value="20">每页20条</option>
+                                    <option value="50">每页50条</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>排名</th>
+                                            <th>内容ID</th>
+                                            <th>作者</th>
+                                            <th>发布时间</th>
+                                            <th>领域</th>
+                                            <th>影响力分数</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="contentRankingTable">
+                                        <!-- 内容排名表格将由JS动态生成 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- 分页控件 -->
+                            <nav aria-label="内容排名分页">
+                                <ul class="pagination justify-content-center" id="contentPagination">
+                                    <!-- 分页将由JS动态生成 -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 成就完成排名 -->
+                <div id="achievement-ranking" class="content-section">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">成就完成排名</h5>
+                            <div class="d-flex gap-2">
+                                <select class="form-select form-select-sm" id="achievementSortBy" style="width: auto;">
+                                    <option value="rank">按排名排序</option>
+                                    <option value="completionRate">按完成率排序</option>
+                                    <option value="achievementCount">按完成人数排序</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th width="80">排名</th>
+                                            <th>成就名称</th>
+                                            <th width="120">完成人数</th>
+                                            <th width="120">完成率</th>
+                                            <th width="100">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="achievementRankingTable">
+                                        <!-- 成就排名表格将由JS动态生成 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成员详情模态框 -->
+    <div class="modal fade" id="memberDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">成员详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="memberDetailContent">
+                    <!-- 成员详情内容将由JS动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成就详情模态框 -->
+    <div class="modal fade" id="achievementDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">成就详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="achievementDetailContent">
+                    <!-- 成就详情内容将由JS动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 内容详情模态框 -->
+    <div class="modal fade" id="contentDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">内容详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="contentDetailContent">
+                    <!-- 内容详情内容将由JS动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

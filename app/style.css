@@ -1,0 +1,205 @@
+.sidebar {
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 56px);
+    padding: 20px 0;
+}
+
+.nav-link {
+    color: #495057;
+    padding: 8px 20px;
+    cursor: pointer;
+}
+
+.nav-link.active {
+    background-color: #e9ecef;
+    color: #0d6efd;
+    border-left: 3px solid #0d6efd;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.ranking-item {
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.ranking-item:hover {
+    border-left-color: #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.level-badge {
+    font-size: 0.8em;
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+.level-l1 {
+    background-color: #6c757d;
+    color: white;
+}
+
+.level-l2 {
+    background-color: #198754;
+    color: white;
+}
+
+.level-l3 {
+    background-color: #0dcaf0;
+    color: black;
+}
+
+.level-l4 {
+    background-color: #ffc107;
+    color: black;
+}
+
+.level-l5 {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.achievement-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+}
+
+.search-box {
+    max-width: 300px;
+}
+
+.content-section {
+    display: none;
+}
+
+.content-section.active {
+    display: block;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    width: 3rem;
+    height: 3rem;
+}
+
+.pagination {
+    margin-bottom: 0;
+}
+
+.member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    font-size: 14px;
+}
+
+.search-results-header {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.achievement-rank-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    font-size: 14px;
+}
+
+.rank-1 {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+}
+
+.rank-2 {
+    background: linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 100%);
+}
+
+.rank-3 {
+    background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
+}
+
+.rank-other {
+    background-color: #6c757d;
+}
+
+/* 评级分布样式 */
+.distribution-bar {
+    height: 8px;
+    border-radius: 4px;
+    margin: 5px 0;
+}
+
+.distribution-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.distribution-item:last-child {
+    border-bottom: none;
+}
+
+.distribution-level {
+    font-weight: bold;
+    min-width: 60px;
+}
+
+.distribution-percentage {
+    font-weight: bold;
+    color: #495057;
+    min-width: 50px;
+    text-align: right;
+}
+
+/* 历史分数图表样式 */
+.score-history-chart {
+    height: 200px;
+    position: relative;
+}
+
+.history-point {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    transform: translate(-50%, -50%);
+}
+
+.history-line {
+    position: absolute;
+    height: 2px;
+    background-color: #0d6efd;
+    transform-origin: left center;
+}
