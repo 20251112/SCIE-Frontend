@@ -86,15 +86,7 @@ const utils = {
     // 格式化完整日期时间
     formatDateTime(dateString) {
         if (!dateString) return "未知";
-        const date = new Date(dateString);
-        return date.toLocaleString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
+        return dateString;
     },
 
     // 生成头像背景色
@@ -343,10 +335,11 @@ const apiService = {
     transformSystemOverviewData(apiData) {
         // 更新系统状态
         appData.systemStatus = {
-            lastUpdate: utils.formatDateTime(apiData.lastUpdateTime),
+            lastUpdate: apiData.lastUpdateTime,
             totalMembers: apiData.totalMembers,
             totalContents: apiData.totalContents
         };
+
 
         // 更新统计数据
         appData.stats = {
@@ -359,7 +352,7 @@ const apiService = {
         // 更新评级分布数据
         appData.ratingDistribution = apiData.ratingDistribution || {};
 
-        // 转换Top成员数据 - 确保只取前5个
+        // 转换Top成员数据
         appData.topMembers = (apiData.topMembers || []).slice(0, 5).map(member => ({
             name: member.memberName,
             level: member.level,
@@ -368,7 +361,7 @@ const apiService = {
             memberId: member.memberId
         }));
 
-        // 转换Top成就数据 - 使用API返回的真实数据
+        // 转换Top成就数据
         appData.topAchievements = (apiData.topAchievements || []).slice(0, 5).map(achievement => ({
             rank: achievement.rank,
             name: achievement.achievementName,
@@ -446,6 +439,8 @@ const apiService = {
             unlikes: content.unlikes,
             comments: content.comments,
             shares: content.shares,
+            reads: content.reads,
+            collects: content.collects,
             rank: content.rank
         }));
 
@@ -453,7 +448,7 @@ const apiService = {
         appData.contentTotalCount = apiData.length;
     },
 
-    // 转换内容详情数据
+    /// 转换内容详情数据
     transformContentDetailData(apiData) {
         if (!apiData) return null;
 
@@ -468,6 +463,8 @@ const apiService = {
             unlikes: apiData.unlikes,
             comments: apiData.comments,
             shares: apiData.shares,
+            reads: apiData.reads,
+            collects: apiData.collects,
             rank: apiData.rank
         };
     },
@@ -744,8 +741,37 @@ const render = {
                 `;
         container.innerHTML += prevHTML;
 
+        // 计算显示的页码范围
+        const maxVisiblePages = 5; // 最多显示5个页码
+        let startPage = Math.max(1, appData.currentMemberPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        // 调整起始页码，确保显示maxVisiblePages个页码
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        // 显示第一页和省略号（如果需要）
+        if (startPage > 1) {
+            const firstPageHTML = `
+                        <li class="page-item">
+                            <a class="page-link" href="#" data-page="1">1</a>
+                        </li>
+                    `;
+            container.innerHTML += firstPageHTML;
+
+            if (startPage > 2) {
+                const ellipsisHTML = `
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        `;
+                container.innerHTML += ellipsisHTML;
+            }
+        }
+
         // 页码按钮
-        for (let i = 1; i <= totalPages; i++) {
+        for (let i = startPage; i <= endPage; i++) {
             const active = i === appData.currentMemberPage ? 'active' : '';
             const pageHTML = `
                         <li class="page-item ${active}">
@@ -753,6 +779,25 @@ const render = {
                         </li>
                     `;
             container.innerHTML += pageHTML;
+        }
+
+        // 显示最后一页和省略号（如果需要）
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const ellipsisHTML = `
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        `;
+                container.innerHTML += ellipsisHTML;
+            }
+
+            const lastPageHTML = `
+                        <li class="page-item">
+                            <a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a>
+                        </li>
+                    `;
+            container.innerHTML += lastPageHTML;
         }
 
         // 下一页按钮
@@ -917,8 +962,37 @@ const render = {
                 `;
         container.innerHTML += prevHTML;
 
+        // 计算显示的页码范围
+        const maxVisiblePages = 5; // 最多显示5个页码
+        let startPage = Math.max(1, appData.currentContentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        // 调整起始页码，确保显示maxVisiblePages个页码
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        // 显示第一页和省略号（如果需要）
+        if (startPage > 1) {
+            const firstPageHTML = `
+                        <li class="page-item">
+                            <a class="page-link" href="#" data-page="1">1</a>
+                        </li>
+                    `;
+            container.innerHTML += firstPageHTML;
+
+            if (startPage > 2) {
+                const ellipsisHTML = `
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        `;
+                container.innerHTML += ellipsisHTML;
+            }
+        }
+
         // 页码按钮
-        for (let i = 1; i <= totalPages; i++) {
+        for (let i = startPage; i <= endPage; i++) {
             const active = i === appData.currentContentPage ? 'active' : '';
             const pageHTML = `
                         <li class="page-item ${active}">
@@ -926,6 +1000,25 @@ const render = {
                         </li>
                     `;
             container.innerHTML += pageHTML;
+        }
+
+        // 显示最后一页和省略号（如果需要）
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const ellipsisHTML = `
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        `;
+                container.innerHTML += ellipsisHTML;
+            }
+
+            const lastPageHTML = `
+                        <li class="page-item">
+                            <a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a>
+                        </li>
+                    `;
+            container.innerHTML += lastPageHTML;
         }
 
         // 下一页按钮
@@ -1313,13 +1406,13 @@ const render = {
 
         // 显示加载状态
         container.innerHTML = `
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">加载中...</span>
-                        </div>
-                        <div class="mt-2">正在加载内容详情...</div>
-                    </div>
-                `;
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">加载中...</span>
+            </div>
+            <div class="mt-2">正在加载内容详情...</div>
+        </div>
+    `;
 
         try {
             // 调用单个内容查询API
@@ -1328,168 +1421,207 @@ const render = {
 
             if (!content) {
                 container.innerHTML = `
-                            <div class="alert alert-warning text-center">
-                                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                                <h5>内容不存在</h5>
-                                <p>未找到ID为 ${contentId} 的内容信息</p>
-                            </div>
-                        `;
+                <div class="alert alert-warning text-center">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <h5>内容不存在</h5>
+                    <p>未找到ID为 ${contentId} 的内容信息</p>
+                </div>
+            `;
                 return;
             }
 
+            // 计算互动率（点赞率）
+            const totalInteractions = content.likes + content.unlikes;
+            const likeRate = totalInteractions > 0 ? (content.likes / totalInteractions * 100).toFixed(1) : 0;
+
             // 渲染内容详情
             const modalHTML = `
-                        <div class="mb-4">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="member-avatar ${utils.getAvatarColor(content.authorName)} me-3" style="width: 48px; height: 48px; font-size: 18px;">
-                                    ${content.authorName.charAt(0)}
-                                </div>
-                                <div>
-                                    <h4 class="mb-1">内容详情</h4>
-                                    <p class="text-muted mb-0">内容ID: ${content.id}</p>
-                                </div>
-                            </div>
-                        </div>
+            <div class="mb-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="member-avatar ${utils.getAvatarColor(content.authorName)} me-3" style="width: 48px; height: 48px; font-size: 18px;">
+                        ${content.authorName.charAt(0)}
+                    </div>
+                    <div>
+                        <h4 class="mb-1">内容详情</h4>
+                        <p class="text-muted mb-0">内容ID: ${content.id}</p>
+                    </div>
+                </div>
+            </div>
 
-                        <div class="mb-4">
-                            <h6>作者信息</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span>作者姓名</span>
-                                                <div>
-                                                    <span>${content.authorName}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span>作者ID</span>
-                                                <div>
-                                                    <span>${content.authorId}</span>
-                                                </div>
-                                            </div>
-                                        </div>
+            <div class="mb-4">
+                <h6>作者信息</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>作者姓名</span>
+                                    <div>
+                                        <span class="fw-bold">${content.authorName}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>作者ID</span>
+                                    <div>
+                                        <span class="text-muted">${content.authorId}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                        <div class="mb-4">
-                            <h6>内容信息</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span>发布时间</span>
-                                                <div>
-                                                    <span>${utils.formatDateTime(content.publishTime)}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span>知识领域</span>
-                                                <div>
-                                                    <span class="badge ${utils.getDomainBadgeClass(content.domain)}">${content.domain}</span>
-                                                </div>
-                                            </div>
-                                        </div>
+            <div class="mb-4">
+                <h6>内容信息</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>发布时间</span>
+                                    <div>
+                                        <span>${utils.formatDateTime(content.publishTime)}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>知识领域</span>
+                                    <div>
+                                        <span class="badge ${utils.getDomainBadgeClass(content.domain)}">${content.domain}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                        <div class="mb-4">
-                            <h6>影响力统计</h6>
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2 text-center">
-                                            <div class="text-primary fw-bold">${utils.formatNumber(content.score)}</div>
-                                            <small class="text-muted">影响力分数</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2 text-center">
-                                            <div class="text-success fw-bold">${utils.formatNumber(content.likes)}</div>
-                                            <small class="text-muted">点赞数</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2 text-center">
-                                            <div class="text-warning fw-bold">${utils.formatNumber(content.comments)}</div>
-                                            <small class="text-muted">评论数</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2 text-center">
-                                            <div class="text-info fw-bold">${utils.formatNumber(content.shares)}</div>
-                                            <small class="text-muted">转发数</small>
-                                        </div>
-                                    </div>
-                                </div>
+            <div class="mb-4">
+                <h6>影响力统计</h6>
+                <div class="row">
+                    <div class="col-md-3 col-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2 text-center">
+                                <div class="text-primary fw-bold h5">${utils.formatNumber(content.score)}</div>
+                                <small class="text-muted">影响力分数</small>
                             </div>
                         </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2 text-center">
+                                <div class="text-success fw-bold h5">${utils.formatNumber(content.likes)}</div>
+                                <small class="text-muted">点赞数</small>
+                                ${totalInteractions > 0 ? `<small class="text-success d-block">${likeRate}% 点赞率</small>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2 text-center">
+                                <div class="text-warning fw-bold h5">${utils.formatNumber(content.comments)}</div>
+                                <small class="text-muted">评论数</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2 text-center">
+                                <div class="text-info fw-bold h5">${utils.formatNumber(content.shares)}</div>
+                                <small class="text-muted">分享数</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                        <div class="mb-4">
-                            <h6>排名信息</h6>
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="card">
-                                        <div class="card-body py-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span>当前排名</span>
-                                                <div>
-                                                    <span class="h5 ${content.rank ? 'text-primary' : 'text-muted'}">
-                                                        ${content.rank ? `第 ${content.rank} 名` : '未排名'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
+            <div class="mb-4">
+                <h6>互动数据</h6>
+                <div class="row">
+                    <div class="col-md-4 col-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2 text-center">
+                                <div class="text-danger fw-bold h5">${utils.formatNumber(content.reads)}</div>
+                                <small class="text-muted">阅读量</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2 text-center">
+                                <div class="text-purple fw-bold h5">${utils.formatNumber(content.collects)}</div>
+                                <small class="text-muted">收藏数</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2 text-center">
+                                <div class="text-secondary fw-bold h5">${utils.formatNumber(content.unlikes)}</div>
+                                <small class="text-muted">踩数</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6>排名信息</h6>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>全局排名</span>
+                                    <div>
+                                        <span class="h5 ${content.rank ? 'text-primary' : 'text-muted'}">
+                                            ${content.rank ? `第 ${utils.formatNumber(content.rank)} 名` : '未排名'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        <div>
-                            <h6>更多信息</h6>
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                详细内容分析和互动数据功能正在开发中，敬请期待...
-                            </div>
-                        </div>
-                    `;
+            <div>
+                <h6>数据摘要</h6>
+                <div class="alert alert-success">
+                    <i class="fas fa-chart-line me-2"></i>
+                    <strong>内容影响力分析：</strong>
+                    该内容获得了 ${utils.formatNumber(content.score)} 影响力分数，
+                    被阅读 ${utils.formatNumber(content.reads)} 次，
+                    收到 ${utils.formatNumber(content.likes)} 个赞和 ${utils.formatNumber(content.comments)} 条评论，
+                    在全局内容中排名第 ${utils.formatNumber(content.rank)} 位。
+                </div>
+            </div>
+        `;
 
             container.innerHTML = modalHTML;
 
         } catch (error) {
             console.error('加载内容详情失败:', error);
             container.innerHTML = `
-                        <div class="alert alert-danger">
-                            <h5 class="alert-heading">加载失败</h5>
-                            <p>无法加载内容详情: ${error.message}</p>
-                            <hr>
-                            <p class="mb-0">请检查网络连接或稍后重试。</p>
-                        </div>
-                    `;
+            <div class="alert alert-danger">
+                <h5 class="alert-heading">加载失败</h5>
+                <p>无法加载内容详情: ${error.message}</p>
+                <hr>
+                <p class="mb-0">请检查网络连接或稍后重试。</p>
+            </div>
+        `;
         }
     }
 };
@@ -1503,7 +1635,7 @@ const memberRankingManager = {
             const sortBy = document.getElementById('sortBy').value;
 
             const params = {
-                count: 100, // 获取足够多的数据用于分页
+                count: 2000, // 获取足够多的数据用于分页
                 domain: domain,
                 sort_by: sortBy
             };
