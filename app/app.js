@@ -1010,13 +1010,13 @@ const render = {
 
         // 显示加载状态
         container.innerHTML = `
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">加载中...</span>
-                        </div>
-                        <div class="mt-2">正在加载成员详情...</div>
-                    </div>
-                `;
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">加载中...</span>
+            </div>
+            <div class="mt-2">正在加载成员详情...</div>
+        </div>
+    `;
 
         try {
             // 调用单个成员查询API
@@ -1025,12 +1025,12 @@ const render = {
 
             if (!member) {
                 container.innerHTML = `
-                            <div class="alert alert-warning text-center">
-                                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                                <h5>成员不存在</h5>
-                                <p>未找到ID为 ${memberId} 的成员信息</p>
-                            </div>
-                        `;
+                <div class="alert alert-warning text-center">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <h5>成员不存在</h5>
+                    <p>未找到ID为 ${memberId} 的成员信息</p>
+                </div>
+            `;
                 return;
             }
 
@@ -1042,155 +1042,143 @@ const render = {
                 const scoreRange = maxScore - minScore || 1;
 
                 historyChartHTML = `
-                            <div class="mb-4">
-                                <h6>历史分数趋势</h6>
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div class="score-history-chart" style="height: 150px; position: relative; border: 1px solid #e9ecef; border-radius: 4px;">
-                                            ${member.scoreHistory.map((history, index) => {
+                <div class="mb-4">
+                    <h6>历史分数趋势</h6>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="score-history-chart" style="height: 150px; position: relative; border: 1px solid #e9ecef; border-radius: 4px;">
+                                ${member.scoreHistory.map((history, index) => {
                     const x = (index / (member.scoreHistory.length - 1)) * 100;
                     const y = 100 - ((history.des_score - minScore) / scoreRange) * 100;
                     return `<div class="history-point" style="left: ${x}%; top: ${y}%;" title="${utils.formatDate(history.update_date)}: ${history.des_score}分"></div>`;
                 }).join('')}
-                                            ${member.scoreHistory.map((history, index) => {
-                    if (index === 0) return '';
-                    const prevX = ((index - 1) / (member.scoreHistory.length - 1)) * 100;
-                    const prevY = 100 - ((member.scoreHistory[index - 1].des_score - minScore) / scoreRange) * 100;
-                    const currentX = (index / (member.scoreHistory.length - 1)) * 100;
-                    const currentY = 100 - ((history.des_score - minScore) / scoreRange) * 100;
-
-                    const length = Math.sqrt(Math.pow(currentX - prevX, 2) + Math.pow(currentY - prevY, 2));
-                    const angle = Math.atan2(currentY - prevY, currentX - prevX) * 180 / Math.PI;
-
-                    return `<div class="history-line" style="left: ${prevX}%; top: ${prevY}%; width: ${length}%; transform: rotate(${angle}deg);"></div>`;
-                }).join('')}
-                                        </div>
-                                        <div class="mt-2 small text-muted text-center">
-                                            显示 ${member.scoreHistory.length} 次历史分数记录
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
-                        `;
+                            <div class="mt-2 small text-muted text-center">
+                                显示 ${member.scoreHistory.length} 次历史分数记录
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
             }
 
             // 渲染成员详情
             const modalHTML = `
-                        <div class="mb-4">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="member-avatar ${utils.getAvatarColor(member.name)} me-3" style="width: 48px; height: 48px; font-size: 18px;">
-                                    ${member.name.charAt(0)}
-                                </div>
-                                <div>
-                                    <h4 class="mb-1">${member.name}</h4>
-                                    <p class="text-muted mb-0">成员ID: ${member.id}</p>
-                                </div>
-                            </div>
-                        </div>
+            <div class="mb-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="member-avatar ${utils.getAvatarColor(member.name)} me-3" style="width: 48px; height: 48px; font-size: 18px;">
+                        ${member.name.charAt(0)}
+                    </div>
+                    <div>
+                        <h4 class="mb-1">${member.name}</h4>
+                        <p class="text-muted mb-0">成员ID: ${member.id}</p>
+                    </div>
+                </div>
+            </div>
 
-                        <div class="mb-4">
-                            <h6>基本信息</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span>主要领域</span>
-                                                <div>
-                                                    <span class="badge ${utils.getDomainBadgeClass(member.domain)}">${member.domain || '未设置'}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span>加入时间</span>
-                                                <div>
-                                                    <span>${utils.formatDate(member.joinTime)}</span>
-                                                </div>
-                                            </div>
-                                        </div>
+            <div class="mb-4">
+                <h6>基本信息</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>主要领域</span>
+                                    <div>
+                                        <span class="badge ${utils.getDomainBadgeClass(member.domain)}">${member.domain || '未设置'}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="mb-4">
-                            <h6>等级信息</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span>等级</span>
-                                                <div>
-                                                    <span class="badge ${utils.getLevelBadgeClass(member.level)} me-2">${utils.getLevelText(member.level)}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span>影响力分数</span>
-                                                <div>
-                                                    <small class="text-muted">${utils.formatNumber(member.score)}分</small>
-                                                </div>
-                                            </div>
-                                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>加入时间</span>
+                                    <div>
+                                        <span>${utils.formatDate(member.joinTime)}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        <div class="mb-4">
-                            <h6>排名信息</h6>
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="card">
-                                        <div class="card-body py-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span>当前排名</span>
-                                                <div>
-                                                    <span class="h5 ${member.rank ? 'text-primary' : 'text-muted'}">
-                                                        ${member.rank ? `第 ${member.rank} 名` : '未排名'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
+            <div class="mb-4">
+                <h6>等级信息</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>等级</span>
+                                    <div>
+                                        <span class="badge ${utils.getLevelBadgeClass(member.level)} me-2">${utils.getLevelText(member.level)}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        ${historyChartHTML}
-
-                        <div>
-                            <h6>更多信息</h6>
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                详细成就数据和内容统计功能正在开发中，敬请期待...
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>影响力分数</span>
+                                    <div>
+                                        <small class="text-muted">${utils.formatNumber(member.score)}分</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    `;
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6>排名信息</h6>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>当前排名</span>
+                                    <div>
+                                        <span class="h5 ${member.rank ? 'text-primary' : 'text-muted'}">
+                                            ${member.rank ? `第 ${member.rank} 名` : '未排名'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            ${historyChartHTML}
+
+            <div>
+                <h6>更多信息</h6>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    详细成就数据和内容统计功能正在开发中，敬请期待...
+                </div>
+            </div>
+        `;
 
             container.innerHTML = modalHTML;
 
         } catch (error) {
             console.error('加载成员详情失败:', error);
             container.innerHTML = `
-                        <div class="alert alert-danger">
-                            <h5 class="alert-heading">加载失败</h5>
-                            <p>无法加载成员详情: ${error.message}</p>
-                            <hr>
-                            <p class="mb-0">请检查网络连接或稍后重试。</p>
-                        </div>
-                    `;
+            <div class="alert alert-danger">
+                <h5 class="alert-heading">加载失败</h5>
+                <p>无法加载成员详情: ${error.message}</p>
+                <hr>
+                <p class="mb-0">请检查网络连接或稍后重试。</p>
+            </div>
+        `;
         }
     },
 
