@@ -134,201 +134,228 @@ const utils = {
         return colors[level] || "#6c757d";
     }
 };
+// 错误处理服务
+const errorHandler = {
+    // 处理API响应错误
+    handleApiError(error, apiName) {
+        console.error(`API调用失败 (${apiName}):`, error);
 
+        // 检查是否是423错误（评分计算中）
+        if (error.message && error.message.includes('423')) {
+            return {
+                type: 'SCORING_IN_PROGRESS',
+                message: '系统正在进行评分计算，请稍后再试',
+                retryable: true
+            };
+        }
+
+        // 检查网络错误
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            return {
+                type: 'NETWORK_ERROR',
+                message: '网络连接失败，请检查网络连接',
+                retryable: true
+            };
+        }
+
+        // 其他API错误
+        return {
+            type: 'API_ERROR',
+            message: error.message || `获取${apiName}数据失败`,
+            retryable: false
+        };
+    },
+
+    // 显示错误提示
+    showError(message, isRetryable = false) {
+        // 创建错误提示元素
+        const errorAlert = document.createElement('div');
+        errorAlert.className = `alert alert-warning alert-dismissible fade show ${isRetryable ? 'scoring-alert' : ''}`;
+        errorAlert.innerHTML = `
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            ${message}
+            ${isRetryable ? '<div class="mt-2 small">系统将在计算完成后自动恢复</div>' : ''}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        // 添加到页面顶部
+        const container = document.querySelector('.container-fluid');
+        container.insertBefore(errorAlert, container.firstChild);
+
+        // 10秒后自动移除
+        setTimeout(() => {
+            if (errorAlert.parentNode) {
+                errorAlert.remove();
+            }
+        }, 10000);
+    },
+
+    // 显示评分计算中的全局提示
+    showScoringProgress() {
+        // 移除现有的提示
+        this.removeScoringProgress();
+
+        // 创建全局提示
+        const progressAlert = document.createElement('div');
+        progressAlert.id = 'scoringProgressAlert';
+        progressAlert.className = 'alert alert-info text-center mb-0 scoring-progress-alert';
+        progressAlert.innerHTML = `
+            <div class="d-flex justify-content-center align-items-center">
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                </div>
+                <strong>系统提示：</strong>
+                <span class="ms-2">系统正在进行评分计算，部分功能可能暂时无法使用，请稍后再试。</span>
+            </div>
+        `;
+
+        // 添加到页面顶部
+        document.body.insertBefore(progressAlert, document.body.firstChild);
+    },
+
+    // 移除评分计算提示
+    removeScoringProgress() {
+        const existingAlert = document.getElementById('scoringProgressAlert');
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+    }
+};
 // API服务 - 各接口独立，互不耦合
 const apiService = {
+    // 通用请求方法，包含错误处理和重试逻辑
+    async makeRequest(url, options = {}, apiName = '未知接口') {
+        const maxRetries = 3;
+        const retryDelay = 2000; // 2秒
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const response = await fetch(url, options);
+
+                // 检查423状态码
+                if (response.status === 423) {
+                    const errorData = await response.json();
+                    throw new Error(`423: ${errorData.message || '系统正在进行评分计算'}`);
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.code === 200) {
+                    return data.data;
+                } else {
+                    throw new Error(data.message || 'API返回错误');
+                }
+
+            } catch (error) {
+                const errorInfo = errorHandler.handleApiError(error, apiName);
+
+                // 如果是评分计算错误，显示全局提示
+                if (errorInfo.type === 'SCORING_IN_PROGRESS') {
+                    errorHandler.showScoringProgress();
+
+                    // 最后一次尝试仍然失败，抛出错误
+                    if (attempt === maxRetries) {
+                        errorHandler.showError(errorInfo.message, errorInfo.retryable);
+                        throw error;
+                    }
+
+                    // 等待后重试
+                    console.log(`评分计算中，${retryDelay / 1000}秒后重试 (${attempt}/${maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+                    continue;
+                }
+
+                // 其他错误，立即抛出
+                if (attempt === maxRetries) {
+                    errorHandler.showError(errorInfo.message, errorInfo.retryable);
+                }
+                throw error;
+            }
+        }
+    },
     // 系统概览接口
     async fetchSystemOverview() {
-        try {
-            const response = await fetch('http://localhost:8081/api/SystemOverview');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-
-            if (data.code === 200) {
-                return data.data;
-            } else {
-                throw new Error(data.message || 'API返回错误');
-            }
-        } catch (error) {
-            console.error('获取系统概览数据失败:', error);
-            throw error;
-        }
+        return await this.makeRequest(
+            'http://localhost:8081/api/SystemOverview',
+            {},
+            '系统概览'
+        );
     },
 
     // 成员排名接口
     async fetchMemberRanking(params = {}) {
-        try {
-            // 构建查询参数
-            const queryParams = new URLSearchParams();
+        const queryParams = new URLSearchParams();
+        if (params.count) queryParams.append('count', params.count);
+        if (params.domain) queryParams.append('domain', params.domain);
+        if (params.sort_by) queryParams.append('sort_by', params.sort_by);
 
-            if (params.count) queryParams.append('count', params.count);
-            if (params.domain) queryParams.append('domain', params.domain);
-            if (params.sort_by) queryParams.append('sort_by', params.sort_by);
+        const url = `http://localhost:8081/api/Member/ranking${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
 
-            const url = `http://localhost:8081/api/Member/ranking${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-
-            if (data.code === 200) {
-                return data.data;
-            } else {
-                throw new Error(data.message || 'API返回错误');
-            }
-        } catch (error) {
-            console.error('获取成员排名数据失败:', error);
-            throw error;
-        }
+        return await this.makeRequest(url, {}, '成员排名');
     },
 
     // 单个成员查询接口
     async fetchMemberDetail(memberId) {
-        try {
-            const response = await fetch(`http://localhost:8081/api/Member/${memberId}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-
-            if (data.code === 200) {
-                return data.data; // 注意：如果成员不存在，data.data为null
-            } else {
-                throw new Error(data.message || 'API返回错误');
-            }
-        } catch (error) {
-            console.error('获取成员详情失败:', error);
-            throw error;
-        }
+        return await this.makeRequest(
+            `http://localhost:8081/api/Member/${memberId}`,
+            {},
+            '成员详情'
+        );
     },
 
     // 成员搜索接口
     async fetchMemberSearch(params = {}) {
-        try {
-            // 构建查询参数
-            const queryParams = new URLSearchParams();
+        const queryParams = new URLSearchParams();
+        if (params.keyword) queryParams.append('keyword', params.keyword);
+        if (params.domain) queryParams.append('domain', params.domain);
+        if (params.count) queryParams.append('count', params.count);
 
-            if (params.keyword) queryParams.append('keyword', params.keyword);
-            if (params.domain) queryParams.append('domain', params.domain);
-            if (params.count) queryParams.append('count', params.count);
+        const url = `http://localhost:8081/api/Member/search${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
 
-            const url = `http://localhost:8081/api/Member/search${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-
-            if (data.code === 200) {
-                return data.data;
-            } else {
-                throw new Error(data.message || 'API返回错误');
-            }
-        } catch (error) {
-            console.error('搜索成员失败:', error);
-            throw error;
-        }
+        return await this.makeRequest(url, {}, '成员搜索');
     },
 
     // 内容排名接口
     async fetchContentRanking(params = {}) {
-        try {
-            // 构建查询参数
-            const queryParams = new URLSearchParams();
+        const queryParams = new URLSearchParams();
+        if (params.count) queryParams.append('count', params.count);
+        if (params.sort_order) queryParams.append('sort_order', params.sort_order);
 
-            if (params.count) queryParams.append('count', params.count);
-            if (params.sort_order) queryParams.append('sort_order', params.sort_order);
+        const url = `http://localhost:8081/api/Content/getContentRanking${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
 
-            const url = `http://localhost:8081/api/Content/getContentRanking${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-
-            if (data.code === 200) {
-                return data.data;
-            } else {
-                throw new Error(data.message || 'API返回错误');
-            }
-        } catch (error) {
-            console.error('获取内容排名数据失败:', error);
-            throw error;
-        }
+        return await this.makeRequest(url, {}, '内容排名');
     },
-
     // 单个内容查询接口
     async fetchContentDetail(contentId) {
-        try {
-            const response = await fetch(`http://localhost:8081/api/Content/searchContent?content_id=${contentId}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-
-            if (data.code === 200) {
-                return data.data;
-            } else {
-                throw new Error(data.message || 'API返回错误');
-            }
-        } catch (error) {
-            console.error('获取内容详情失败:', error);
-            throw error;
-        }
+        return await this.makeRequest(
+            `http://localhost:8081/api/Content/searchContent?content_id=${contentId}`,
+            {},
+            '内容详情'
+        );
     },
 
     // 成就清单接口
     async fetchAchievementList() {
-        try {
-            const response = await fetch('http://localhost:8081/api/Achievement/getAchievementList');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-
-            if (data.code === 200) {
-                return data.data;
-            } else {
-                throw new Error(data.message || 'API返回错误');
-            }
-        } catch (error) {
-            console.error('获取成就清单失败:', error);
-            throw error;
-        }
+        return await this.makeRequest(
+            'http://localhost:8081/api/Achievement/getAchievementList',
+            {},
+            '成就清单'
+        );
     },
 
     // 成就排名接口
     async fetchAchievementRanking(params = {}) {
-        try {
-            // 构建查询参数
-            const queryParams = new URLSearchParams();
+        const queryParams = new URLSearchParams();
+        if (params.count) queryParams.append('count', params.count);
+        if (params.sort_order) queryParams.append('sort_order', params.sort_order);
 
-            if (params.count) queryParams.append('count', params.count);
-            if (params.sort_order) queryParams.append('sort_order', params.sort_order);
+        const url = `http://localhost:8081/api/Achievement/getAchievementRanking${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
 
-            const url = `http://localhost:8081/api/Achievement/getAchievementRanking${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-
-            if (data.code === 200) {
-                return data.data;
-            } else {
-                throw new Error(data.message || 'API返回错误');
-            }
-        } catch (error) {
-            console.error('获取成就排名数据失败:', error);
-            throw error;
-        }
+        return await this.makeRequest(url, {}, '成就排名');
     },
 
     // 转换API数据为应用内部格式 - 系统概览
@@ -1654,17 +1681,28 @@ const memberRankingManager = {
             render.renderSearchResultsHeader();
 
         } catch (error) {
-            console.error('加载成员排名失败:', error);
-            // 显示错误信息
+            // 错误处理
             const container = document.getElementById('memberRankingTable');
-            container.innerHTML = `
-                        <tr>
-                            <td colspan="7" class="text-center text-danger py-4">
-                                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                                <div>加载成员排名失败: ${error.message}</div>
-                            </td>
-                        </tr>
-                    `;
+            if (error.message && error.message.includes('423')) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-warning py-4">
+                            <i class="fas fa-sync-alt fa-spin fa-2x mb-2"></i>
+                            <div>系统正在进行评分计算</div>
+                            <small class="text-muted">请稍后再试，系统将在计算完成后自动恢复</small>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-danger py-4">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <div>加载成员排名失败: ${error.message}</div>
+                        </td>
+                    </tr>
+                `;
+            }
         }
     },
 
@@ -1936,49 +1974,52 @@ document.addEventListener('DOMContentLoaded', function () {
     const loadingOverlay = document.getElementById('loadingOverlay');
     loadingOverlay.style.display = 'flex';
 
-    // 初始化成员排名事件监听
+    // 初始化各种管理器
     memberRankingManager.initEventListeners();
-
-    // 初始化内容排名事件监听
     contentRankingManager.initEventListeners();
-
-    // 初始化成就排名事件监听
     achievementRankingManager.initEventListeners();
-
-    // 初始化搜索事件监听
     searchManager.initEventListeners();
 
     // 从API获取数据 - 系统概览
     apiService.fetchSystemOverview()
         .then(apiData => {
-            // 转换API数据
             apiService.transformSystemOverviewData(apiData);
-
-            // 渲染系统概览相关数据
             render.systemStatus();
             render.statCards();
             render.ratingDistribution();
             render.topMembersList();
             render.topAchievementsList();
-
-            // 隐藏加载指示器
             loadingOverlay.style.display = 'none';
+
+            // 成功加载后移除可能的评分提示
+            errorHandler.removeScoringProgress();
         })
         .catch(error => {
             console.error('初始化系统概览数据失败:', error);
 
-            // 显示错误信息
+            // 错误已经在apiService中处理，这里只需要更新UI
             const overviewSection = document.getElementById('overview');
-            overviewSection.innerHTML = `
-                        <div class="alert alert-danger">
-                            <h4 class="alert-heading">数据加载失败</h4>
-                            <p>无法从服务器获取系统概览数据。错误信息: ${error.message}</p>
-                            <hr>
-                            <p class="mb-0">请检查网络连接或联系系统管理员。</p>
-                        </div>
-                    `;
-
-            // 隐藏加载指示器
+            if (error.message && error.message.includes('423')) {
+                overviewSection.innerHTML = `
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-sync-alt fa-spin fa-2x mb-2"></i>
+                        <h4>系统正在计算评分</h4>
+                        <p>系统正在进行评分计算，请稍后再访问系统概览页面。</p>
+                        <button class="btn btn-outline-warning mt-2" onclick="location.reload()">
+                            <i class="fas fa-redo"></i> 重新加载
+                        </button>
+                    </div>
+                `;
+            } else {
+                overviewSection.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4 class="alert-heading">数据加载失败</h4>
+                        <p>无法从服务器获取系统概览数据。错误信息: ${error.message}</p>
+                        <hr>
+                        <p class="mb-0">请检查网络连接或联系系统管理员。</p>
+                    </div>
+                `;
+            }
             loadingOverlay.style.display = 'none';
         });
 
