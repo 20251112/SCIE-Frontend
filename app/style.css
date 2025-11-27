@@ -203,3 +203,42 @@
     background-color: #0d6efd;
     transform-origin: left center;
 }
+
+/* 评分计算提示样式 */
+.scoring-progress-alert {
+    position: sticky;
+    top: 0;
+    z-index: 1060;
+    border-radius: 0;
+    animation: slideDown 0.3s ease-out;
+}
+
+.scoring-alert {
+    border-left: 4px solid #ffc107;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* 加载状态样式 */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050;
+}
