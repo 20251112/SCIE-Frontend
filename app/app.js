@@ -1458,7 +1458,7 @@ const render = {
             }
 
             // 计算互动率（点赞率）
-            const totalInteractions = content.likes + content.unlikes;
+            const totalInteractions = content.reads;
             const likeRate = totalInteractions > 0 ? (content.likes / totalInteractions * 100).toFixed(1) : 0;
 
             // 渲染内容详情
